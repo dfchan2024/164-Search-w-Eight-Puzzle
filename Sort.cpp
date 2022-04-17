@@ -81,8 +81,10 @@ Node* Sort::BFS() {
 					return next;
 				inReach = false;
 				for (unsigned int j = 0; j < numNode; j++) {
-					if (s == reached[j])
+					if (s == reached[j]) {
 						inReach = true;
+						j = numNode;
+					}
 				}
 				if (!inReach) {				// if s is not in reached then
 					reached[numNode] = s;	// add s to reached
@@ -166,6 +168,7 @@ Node* Sort::AstarSearch() {
 						inReach = true;
 						reachVal = j;
 						reach->setState(reached[j]);
+						j = numNode;
 					}
 				}
 				// if s is not in reached or child.PATH_COST < reached[s].PATH_COST then
@@ -223,6 +226,7 @@ Node* Sort::LimitedFSearch(Node* n, int fmax) {
 						inReach = true;
 						reachVal = j;
 						reach->setState(reached[j]);
+						j = numNode;
 					}
 				}
 				// if s is not in reached or child.PATH_COST < reached[s].PATH_COST then
