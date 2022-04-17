@@ -7,7 +7,6 @@
 Sort::Sort() {
 	initial = new Node();
 	final = "";
-	reached = new std::string[0];
 	priority = new PQueue();
 	numExp = 0;
 	numNode = 0;
@@ -21,7 +20,6 @@ Sort::Sort() {
 Sort::Sort(std::string state, std::string fin) {
 	initial = new Node(state);
 	final = fin;
-	reached = new std::string[1000000];
 	priority = new PQueue();
 	numExp = 0;
 	numNode = 0;
@@ -33,8 +31,11 @@ Sort::Sort(std::string state, std::string fin) {
 
 // Destructor
 Sort::~Sort() {
-	delete[] reached;
 	delete initial;
+	delete cutoff;
+	delete next;
+	delete result;
+	delete fail;
 }
 
 // Function to expand parent node to children nodes
@@ -64,7 +65,7 @@ Node* Sort::BFS() {
 		return n;
 	frontier.push(n);				// frontier <- FIFO queue, with node as an element
 	numNode++;
-	reached[0] = *(n->state);		// reached <- {problem.INITIAL}
+	reached.push_back(*(n->state));	// reached <- {problem.INITIAL}
 
 	std::string s = "";
 	bool inReach = false;
@@ -81,13 +82,13 @@ Node* Sort::BFS() {
 					return next;
 				inReach = false;
 				for (unsigned int j = 0; j < numNode; j++) {
-					if (s == reached[j]) {
+					if (s == reached.at(j)) {
 						inReach = true;
 						j = numNode;
 					}
 				}
 				if (!inReach) {				// if s is not in reached then
-					reached[numNode] = s;	// add s to reached
+					reached.push_back(s);	// add s to reached
 					numNode++;
 					frontier.push(next);	// add child to frontier
 				}
@@ -145,7 +146,7 @@ Node* Sort::AstarSearch() {
 	Node* n = initial;				// node <- NODE(STATE=problem.INITIAL)
 	priority->push(n);				// frontier <- a priority queue ordered by f, with node as an element
 	numNode++;
-	reached[0] = (*n->state);		// reached <- {problem.INITIAL}
+	reached.push_back(*n->state);	// reached <- {problem.INITIAL}
 
 	std::string s = "";
 	bool inReach;
@@ -164,16 +165,21 @@ Node* Sort::AstarSearch() {
 				inReach = false;
 				reachVal = numNode;
 				for (unsigned int j = 0; j < numNode; j++) {
-					if (s == reached[j]) {
+					if (s == reached.at(j)) {
 						inReach = true;
 						reachVal = j;
-						reach->setState(reached[j]);
+						reach->setState(s);
 						j = numNode;
 					}
 				}
 				// if s is not in reached or child.PATH_COST < reached[s].PATH_COST then
-				if (!inReach || next->getHeur() < reach->getHeur()) {
-					reached[reachVal] = (*next->state);		// reached[s] <- child
+				if (!inReach) {
+					reached.push_back(*next->state);		// reached[s] <- child
+					priority->push(next);					// add child to frontier
+					numNode++;
+				}
+				else if (next->getHeur() < reach->getHeur()) {
+					reached.at(reachVal) = (*next->state);	// reached[s] <- child
 					priority->push(next);					// add child to frontier
 					numNode++;
 				}
@@ -187,7 +193,7 @@ Node* Sort::AstarSearch() {
 Node* Sort::IDASearch() {
 	Node* n = initial;
 	numNode++;
-	reached[0] = (*n->state);
+	reached.push_back(*n->state);
 	int fmax = n->getHeur();				// fmax <- h(initial state)
 	Node* result = new Node();
 	for (int i = 0; i < INT_MAX; i++) {		// for i <- 0 to infinity do
@@ -222,22 +228,27 @@ Node* Sort::LimitedFSearch(Node* n, int fmax) {
 				inReach = false;
 				reachVal = numNode;
 				for (unsigned int j = 0; j < numNode; j++) {
-					if (s == reached[j]) {
+					if (s == reached.at(j)) {
 						inReach = true;
 						reachVal = j;
-						reach->setState(reached[j]);
+						reach->setState(s);
 						j = numNode;
 					}
 				}
 				// if s is not in reached or child.PATH_COST < reached[s].PATH_COST then
-				if (!inReach || next->getHeur() < reach->getHeur()) {
-					reached[reachVal] = (*next->state);			// reached[s] <- child
-					priority->push(next);						// add child to frontier
+				if (!inReach) {
+					reached.push_back(*next->state);		// reached[s] <- child
+					priority->push(next);					// add child to frontier
+					numNode++;
+				}
+				else if (next->getHeur() < reach->getHeur()) {
+					reached.at(reachVal) = (*next->state);	// reached[s] <- child
+					priority->push(next);					// add child to frontier
 					numNode++;
 				}
 			}
 		}
-		n = priority->pop();									// node <- POP(frontier)
-		return LimitedFSearch(n, fmax);							// result <- LIMITED_F_SEARCH(problem, fmax)
+		n = priority->pop();								// node <- POP(frontier)
+		return LimitedFSearch(n, fmax);						// result <- LIMITED_F_SEARCH(problem, fmax)
 	}
 }
