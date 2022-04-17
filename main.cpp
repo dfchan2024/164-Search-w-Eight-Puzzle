@@ -11,7 +11,7 @@ void printOpt() {
 	std::cout << "3. Iterative-Deeping Depth-First Search" << std::endl;
 	std::cout << "4. A* Search w/ Out-Of-Place, and Manhattan Distance Heuristics" << std::endl;
 	std::cout << "5. Iterative-Deeping A* Search" << std::endl;
-	std::cout << "6. Manuel Puzzle Sequence" << std::endl;
+	std::cout << "6. Manual Puzzle Sequence" << std::endl;
 }
 
 int main() {
@@ -237,6 +237,8 @@ int main() {
 				fin->display();
 				std::cout << "Number of expanded node: " << ex << std::endl;
 				std::cout << "Solution sequence of moves: " << m << std::endl;
+				if (input2 == 3)
+					std::cout << "Depth Reached: " << m.size() << std::endl;
 				std::cout << "Time take: " << time_taken << " seconds" << std::endl;
 			}
 		}
