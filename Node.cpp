@@ -6,7 +6,7 @@
 Node::Node() {
 	O_tile = -1;
 	size = 0;
-	outOfPlace = manhanDis = heuristic = 0;
+	outOfPlace = manhanDis = 0;
 	state = new std::string("");
 	moves = new std::string("");
 }
@@ -47,21 +47,28 @@ Node::~Node() {
 
 // Function to calculate all heuristic costs of tile puzzle
 void Node::CalHeur() {
-	outOfPlace = manhanDis = heuristic = 0;
+	outOfPlace = manhanDis = 0;
 	int val = 0;
 	int sq = sqrt(state->size());
 	int depth = moves->size();
 
 	for (int i = 0; i < state->size(); i++) {		// Calculate Out-Of-Place
 		val = (state->at(i) - 48);
+		if (val > 9)
+			val -= 7;
 		if (val != i+1 && val != 0)
 			outOfPlace++;
 	}
 	for (int i = 0; i < state->size(); i++) {		// Calculate Manhanttan Distance
 		val = (state->at(i) - 48);
-		manhanDis += (abs(((val - 1) % sq) - (i % sq)) + abs(((val - 1) / sq) - (i / sq)));
+		if (val > 9)
+			val -= 7;
+		if (val != 0)
+			manhanDis += (abs(((val - 1) % sq) - (i % sq)) + abs(((val - 1) / sq) - (i / sq)));
 	}
-	heuristic = outOfPlace + manhanDis + depth;		// Add cost so far
+	// Add cost so far to both
+	outOfPlace += depth;
+	manhanDis += depth;
 }
 
 // Function to display tile puzzle as 3x3 or 4x4
@@ -113,6 +120,21 @@ void Node::checkO() {
 		std::cin >> input;
 		setState(input);
 	}
+}
+
+// Function to change current state's heuristic cost
+void Node::setHeur(int h, bool type) {
+	if (type) 			// Out-Of-Place
+		outOfPlace = h;
+	else 				// Manhanttan Distance
+		manhanDis = h;
+}
+
+int Node::getHeur(bool type) {
+	if (type)			// Out of Place
+		return outOfPlace;
+	else				// Manhanttan Distance
+		return manhanDis;
 }
 
 // Function to check if a move is valid on current state
@@ -172,27 +194,19 @@ void Node::move(char m) {
 
 // Function to perform a move on puzzle tile and return as new Node
 Node* Node::moveAct(char m) {
-	Node* ret;
-	if (!valid(m)) {		// Invalid move returns invalid state
-		ret = new Node();
-		return ret;
+	int temp;
+	int sq = sqrt(size);
+	switch (m) {										// Determine which tile will be moved
+	case 'u': case 'U': temp = O_tile - sq;	break;
+	case 'd': case 'D': temp = O_tile + sq;	break;
+	case 'l': case 'L': temp = O_tile - 1;	break;
+	case 'r': case 'R': temp = O_tile + 1;	break;
+	default:  temp = -1;
 	}
-	else {
-		int temp;
-		int sq = sqrt(size);
-		switch (m) {										// Determine which tile will be moved
-		case 'u': case 'U': temp = O_tile - sq;	break;
-		case 'd': case 'D': temp = O_tile + sq;	break;
-		case 'l': case 'L': temp = O_tile - 1;	break;
-		case 'r': case 'R': temp = O_tile + 1;	break;
-		default:  temp = -1;
-		}
-		std::string newState = swapStr(O_tile, temp);		// Calls helper function
-		std::string newMove = *moves;
-		newMove.push_back(m);
-		ret = new Node(newState, newMove);
-		return ret;											// Returns a new Node with state after a move from an initial state
-	}
+	std::string newState = swapStr(O_tile, temp);		// Calls helper function
+	std::string newMove = *moves;
+	newMove.push_back(m);
+	return new Node(newState, newMove);					// Returns a new Node with state after a move from an initial state
 }
 
 // Function to perform a sequence of moves for testing solutions

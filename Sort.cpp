@@ -1,6 +1,7 @@
 #include <iostream>
 #include <queue>
 #include "Node.h"
+#include "Hash.h"
 #include "Sort.h"
 
 // Default constructor
@@ -8,25 +9,27 @@ Sort::Sort() {
 	initial = new Node();
 	final = "";
 	priority = new PQueue();
+	type = false;
 	numExp = 0;
-	numNode = 0;
 	cutoff = new Node();
 	next = new Node();
 	result = new Node();
 	fail = new Node();
+	reach = new Node();
 }
 
-// Default constructor with initial and goal state parameters
-Sort::Sort(std::string state, std::string fin) {
+// Default constructor with initial and goal state and tyoe parameters
+Sort::Sort(std::string state, std::string fin, bool type) {
 	initial = new Node(state);
 	final = fin;
-	priority = new PQueue();
+	priority = new PQueue(type);
+	this->type = type;
 	numExp = 0;
-	numNode = 0;
 	cutoff = new Node("0");
 	next = new Node();
 	result = new Node("0");
 	fail = new Node();
+	reach = new Node(state);
 }
 
 // Destructor
@@ -44,28 +47,37 @@ Node* Sort::expand(Node* n, int i) {
 	if (!(*n).moves->empty())
 		last = (*n).moves->back();
 
-	if (i == 0 && last != 'D')			// Returns child one by one; Checks so there are no backtracks (i.e., Down after an Up)
-		return (*n).moveAct('U');
-	else if (i == 1 && last != 'U')
-		return (*n).moveAct('D');
-	else if (i == 2 && last != 'R')
-		return (*n).moveAct('L');
-	else if (i == 3 && last != 'L')
-		return (*n).moveAct('R');
-	else {
-		Node* emp = new Node();
-		return emp;
+	if (i == 0 && last != 'D') {		// Returns child one by one; Checks so there are no backtracks (i.e., Down after an Up)
+		if (n->valid('U'))				// If invalid move, return invalid state
+			return (*n).moveAct('U');
 	}
+	else if (i == 1 && last != 'U') {
+		if (n->valid('D'))
+			return (*n).moveAct('D');
+	}
+	else if (i == 2 && last != 'R') {
+		if (n->valid('L'))
+			return (*n).moveAct('L');
+	}
+	else if (i == 3 && last != 'L') {
+		if (n->valid('R'))
+			return (*n).moveAct('R');
+	}
+	return fail;
 }
 
 // Function to perform Breadth-First-Search
 Node* Sort::BFS() {
+	Hash* reached;
+	if (initial->state->size() == 16)
+		reached = new Hash(200000);
+	else
+		reached = new Hash(5000);
 	Node* n = initial;				// node <- NODE(problem.initial)
 	if ((*n->state) == final)		// if problem.IS_GOAL(node.STATE) then return node
 		return n;
 	frontier.push(n);				// frontier <- FIFO queue, with node as an element
-	numNode++;
-	reached.push_back(*(n->state));	// reached <- {problem.INITIAL}
+	reached->insert(*(n->state), (n->getHeur(true)));	// reached <- {problem.INITIAL}
 
 	std::string s = "";
 	bool inReach = false;
@@ -80,17 +92,10 @@ Node* Sort::BFS() {
 				s = *(next->state);			// s <- child.STATE
 				if (s == final)				// if problem.IS_GOAL(s) then return child
 					return next;
-				inReach = false;
-				for (unsigned int j = 0; j < numNode; j++) {
-					if (s == reached.at(j)) {
-						inReach = true;
-						j = numNode;
-					}
-				}
-				if (!inReach) {				// if s is not in reached then
-					reached.push_back(s);	// add s to reached
-					numNode++;
-					frontier.push(next);	// add child to frontier
+				inReach = reached->search(*(next->state));
+				if (!inReach) {									// if s is not in reached then
+					reached->insert(s, (next->getHeur(true)));	// add s to reached
+					frontier.push(next);						// add child to frontier
 				}
 			}
 		}
@@ -138,20 +143,22 @@ Node* Sort::IterativeDeepingSearch() {
 		if (*(result->state) != std::string("0"))	// if result != cutoff then return result
 			return result;
 	}
-	return result;
+	return fail;
 }
 
 // Function to perform A* Search
 Node* Sort::AstarSearch() {
+	Hash* reached;
+	if (initial->state->size() == 16)
+		reached = new Hash(200000);
+	else
+		reached = new Hash(5000);
 	Node* n = initial;				// node <- NODE(STATE=problem.INITIAL)
 	priority->push(n);				// frontier <- a priority queue ordered by f, with node as an element
-	numNode++;
-	reached.push_back(*n->state);	// reached <- {problem.INITIAL}
+	reached->insert(*(n->state), (n->getHeur(type)));	// reached <- {problem.INITIAL}
 
 	std::string s = "";
 	bool inReach;
-	int reachVal;
-	Node* reach = new Node(*n->state);
 
 	while (!priority->isEmpty()) {			// while not IS_EMPTY(frontier) do
 		n = priority->pop();				// node <- POP(frontier)
@@ -162,26 +169,19 @@ Node* Sort::AstarSearch() {
 			next = expand(n, i);
 			if (*(next->state) != std::string("")) {
 				s = *(next->state);			// s <- child.STATE
-				inReach = false;
-				reachVal = numNode;
-				for (unsigned int j = 0; j < numNode; j++) {
-					if (s == reached.at(j)) {
-						inReach = true;
-						reachVal = j;
-						reach->setState(s);
-						j = numNode;
-					}
+				inReach = reached->search(*(next->state));
+				if (inReach) {
+					reach->setState(s);
+					reach->setHeur(reached->getCost(s), type);
 				}
 				// if s is not in reached or child.PATH_COST < reached[s].PATH_COST then
 				if (!inReach) {
-					reached.push_back(*next->state);		// reached[s] <- child
-					priority->push(next);					// add child to frontier
-					numNode++;
+					reached->insert(s, next->getHeur(type));	// reached[s] <- child
+					priority->push(next);						// add child to frontier
 				}
-				else if (next->getHeur() < reach->getHeur()) {
-					reached.at(reachVal) = (*next->state);	// reached[s] <- child
-					priority->push(next);					// add child to frontier
-					numNode++;
+				else if (next->getHeur(type) < reach->getHeur(type)) {
+					reached->setCost(s, next->getHeur(type));	// reached[s] <- child
+					priority->push(next);						// add child to frontier
 				}
 			}
 		}
@@ -191,64 +191,62 @@ Node* Sort::AstarSearch() {
 
 // Function to perform Iterative Deeping A* Search
 Node* Sort::IDASearch() {
-	Node* n = initial;
-	numNode++;
-	reached.push_back(*n->state);
-	int fmax = n->getHeur();				// fmax <- h(initial state)
-	Node* result = new Node();
-	for (int i = 0; i < INT_MAX; i++) {		// for i <- 0 to infinity do
-		result = LimitedFSearch(n, fmax);	// result <- LIMITED_F_SEARCH(problem, fmax)
-		if ((*result->state) == final) {	// if result is a solution then return result
+	Hash* reached;
+	if (initial->state->size() == 16)
+		reached = new Hash(200000);
+	else
+		reached = new Hash(5000);
+	Node* n = initial;									// node <- NODE(STATE=problem.INITIAL)
+	priority->push(n);									// frontier <- a priority queue ordered by f, with node as an element
+	reached->insert(*(n->state), (n->getHeur(type)));
+	int fmax = n->getHeur(type);						// fmax <- h(initial state)
+
+	for (int i = 0; i < INT_MAX; i++) {					// for i <- 0 to infinity do
+		result = LimitedFSearch(fmax, reached);			// result <- LIMITED_F_SEARCH(problem, fmax)
+		if ((*result->state) == final) {				// if result is a solution then return result
 			std::cout << "Backtracked to heuristic cost: " << fmax << std::endl << std::endl;
 			return result;
 		}
-		fmax = result->getHeur();			// else fmax <- result
-		n = result;
+		fmax = result->getHeur(type);					// else fmax <- result
 	}
-	return result;
+	return fail;
 }
 
 // Helper function for IDA; Combined DFS and A* Search
-Node* Sort::LimitedFSearch(Node* n, int fmax) {
-	if ((*n->state) == final)			// if GOAL_TEST(problem, STATE[node]) then return node
-		return n;
-	else if (n->getHeur() > fmax)		// return min {f(m) | search backtracked at node m}
-		return n;
-	else {
-		std::string s = "";
-		bool inReach;
-		int reachVal;
-		Node* reach = new Node(*n->state);
+Node* Sort::LimitedFSearch(int fmax, Hash* reached) {
+	std::string s = "";
+	bool inReach;
+	Node* n;
 
-		numExp++;
-		for (int i = 0; i < 4; i++) {					// for each child in EXPAND(problem, node)
-			next = expand(n, i);
-			if (*(next->state) != std::string("")) {
-				s = *(next->state);						// s <- child.STATE
-				inReach = false;
-				reachVal = numNode;
-				for (unsigned int j = 0; j < numNode; j++) {
-					if (s == reached.at(j)) {
-						inReach = true;
-						reachVal = j;
+	while (!priority->isEmpty()) {
+		n = priority->pop();
+		if (*n->state == final)					// if search finds a solution then return the solution
+			return n;
+		else {
+			numExp++;
+			for (int i = 0; i < 4; i++) {		// for each child in EXPAND(problem, node)
+				next = expand(n, i);
+				if (*(next->state) != std::string("")) {
+					s = *(next->state);			// s <- child.STATE
+					inReach = (reached->search(*(next->state)));
+					if (inReach) {
 						reach->setState(s);
-						j = numNode;
+						reach->setHeur(reached->getCost(s), type);
+					}
+					// if s is not in reached or child.PATH_COST < reached[s].PATH_COST then
+					if (!inReach) {
+						(reached->insert(s, next->getHeur(type)));	// reached[s] <- child
+						priority->push(next);						// add child to frontier
+					}
+					else if (next->getHeur(type) < reach->getHeur(type)) {
+						(reached->setCost(s, next->getHeur(type)));	// reached[s] <- child
+						priority->push(next);						// add child to frontier
 					}
 				}
-				// if s is not in reached or child.PATH_COST < reached[s].PATH_COST then
-				if (!inReach) {
-					reached.push_back(*next->state);		// reached[s] <- child
-					priority->push(next);					// add child to frontier
-					numNode++;
-				}
-				else if (next->getHeur() < reach->getHeur()) {
-					reached.at(reachVal) = (*next->state);	// reached[s] <- child
-					priority->push(next);					// add child to frontier
-					numNode++;
-				}
 			}
+			if (n->getHeur(type) > fmax)		// else return min{f(m) | the search backtracked at node m}
+				return n;
 		}
-		n = priority->pop();								// node <- POP(frontier)
-		return LimitedFSearch(n, fmax);						// result <- LIMITED_F_SEARCH(problem, fmax)
 	}
+	return fail;
 }

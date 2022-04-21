@@ -9,7 +9,6 @@ private:
 	int O_tile;			// position of blank tiles within string
 	int outOfPlace;		// heuristic #1: Number of misplaced tiles
 	int manhanDis;		// heuristic #2: Manhattan distance of all 8 tiles
-	int heuristic;		// total heuristic cost
 	void CalHeur();		// function to calculate all heuristic costs of tile puzzle
 
 public:
@@ -23,7 +22,8 @@ public:
 	void display();							// function to display tile puzzle as 3x3 or 4x4
 	void setState(std::string s);			// function to change current state into new string
 	void checkO();							// function to check if blank is within puzzle
-	int getHeur() { return heuristic; }		// function to return total heuristic cost
+	void setHeur(int h, bool type);			// function to change current state's heuristic cost
+	int getHeur(bool type);					// function to return heuristic cost
 	bool valid(char m);						// function to check if a move is valid on current state
 	std::string swapStr(int x, int y);		// helper function for moveAct
 	void move(char m);						// function to perform a move on puzzle tile

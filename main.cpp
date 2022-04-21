@@ -9,9 +9,11 @@ void printOpt() {
 	std::cout << "1. Breadth-First Search" << std::endl;
 	std::cout << "2. Depth-First Search" << std::endl;
 	std::cout << "3. Iterative-Deeping Depth-First Search" << std::endl;
-	std::cout << "4. A* Search w/ Out-Of-Place, and Manhattan Distance Heuristics" << std::endl;
-	std::cout << "5. Iterative-Deeping A* Search" << std::endl;
-	std::cout << "6. Manual Puzzle Sequence" << std::endl;
+	std::cout << "4. A* Search w/ Out-Of-Place Heuristic" << std::endl;
+	std::cout << "5. A* Search w/ Manhattan Distance Heuristic" << std::endl;
+	std::cout << "6. Iterative-Deeping A* Search w/ Out-Of-Place Heuristic" << std::endl;
+	std::cout << "7. Iterative-Deeping A* Search w/ Manhattan Distance Heuristic" << std::endl;
+	std::cout << "8. Manual Puzzle Sequence" << std::endl;
 }
 
 int main() {
@@ -41,8 +43,8 @@ int main() {
 	std::cin >> input2;		// Get user input
 	system("cls");
 
-	// Checks whether user input for sorting algorithm was between 1 and 6; Loops for user input if not.
-	while (input2 < 1 || input2 > 6) {
+	// Checks whether user input for sorting algorithm was between 1 and 8; Loops for user input if not.
+	while (input2 < 1 || input2 > 8) {
 		std::cout << "Invalid input. Please type valid integer." << std::endl << std::endl;
 		std::cout << "Enter the corresponding integer:" << std::endl;
 		printOpt();
@@ -68,7 +70,7 @@ int main() {
 		Node* startState = new Node(input3);
 		startState->checkO();
 
-		if (input2 == 6) {			// Case if manuel sequence is inputted
+		if (input2 == 8) {			// Case if manuel sequence is inputted
 			std::cout << std::endl << "Enter move sequence as string. (Ex: UDLR)" << std::endl;
 			std::cin >> input5;		// Get user input
 
@@ -100,13 +102,17 @@ int main() {
 			startState->display();		// Display tile puzzle
 
 			// Create puzzle object from Sort class
-			Sort* Puzzle = new Sort(input3, input4);
+			Sort* Puzzle;
+			if (input2 == 5 || input2 == 7)
+				Puzzle = new Sort(input3, input4, false);		// For A* with Manhanttan Distance
+			else
+				Puzzle = new Sort(input3, input4, true);		// For A* with Out-Of-Place
 			Node* fin = new Node();
 
 			// Start of stopwatch
 			auto start = std::chrono::high_resolution_clock::now();
 
-			// Perform one of the five sorting algorithms
+			// Perform one of the seven sorting algorithms
 			if (input2 == 1) {
 				fin = Puzzle->BFS();
 			}
@@ -118,17 +124,25 @@ int main() {
 				fin = Puzzle->IterativeDeepingSearch();
 			}
 			else if (input2 == 4) {
-				std::cout << "Heuristics Cost: " << startState->getHeur() << std::endl << std::endl;
+				std::cout << "Heuristics Cost: " << startState->getHeur(true) << std::endl << std::endl;
 				fin = Puzzle->AstarSearch();
 			}
 			else if (input2 == 5) {
-				std::cout << "Heuristics Cost: " << startState->getHeur() << std::endl << std::endl;
+				std::cout << "Heuristics Cost: " << startState->getHeur(false) << std::endl << std::endl;
+				fin = Puzzle->AstarSearch();
+			}
+			else if (input2 == 6) {
+				std::cout << "Heuristics Cost: " << startState->getHeur(true) << std::endl << std::endl;
+				fin = Puzzle->IDASearch();
+			}
+			else if (input2 == 7) {
+				std::cout << "Heuristics Cost: " << startState->getHeur(false) << std::endl << std::endl;
 				fin = Puzzle->IDASearch();
 			}
 
 			// End of stopwatch
 			auto end = std::chrono::high_resolution_clock::now();
-			double time_taken = std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
+			double time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
 			if ((*fin->state) == std::string(""))			// Case if algorithm could not reach goal state
 				std::cout << "Final state could not be found. Please relaunch program and try again." << std::endl;
@@ -145,7 +159,7 @@ int main() {
 				std::cout << "Solution sequence of moves: " << m << std::endl;
 				if (input2 == 3)
 					std::cout << "Depth Reached: " << m.size() << std::endl;
-				std::cout << "Time take: " << time_taken << " seconds" << std::endl;
+				std::cout << "Time take: " << time_taken << " milliseconds" << std::endl;
 			}
 		}
 	}
@@ -163,14 +177,14 @@ int main() {
 		Node* startState = new Node(input3);
 		startState->checkO();
 
-		if (input2 == 6) {			// Case if manuel sequence is inputted
+		if (input2 == 8) {			// Case if manuel sequence is inputted
 			std::cout << std::endl << "Enter move sequence as string. (Ex: UDLR)" << std::endl;
 			std::cin >> input5;		// Get user input
 			system("cls");
 			startState->sequence(input5);
 		}
 		else {
-			std::cout << std::endl << std::endl;
+			std::cout << std::endl;
 			std::cout << "Enter goal state as string. (Ex: 123456789ABCDEF0)" << std::endl;
 			std::cin >> input4;		// Get user input
 
@@ -194,13 +208,17 @@ int main() {
 			startState->display();		// Display tile puzzle
 
 			// Create puzzle object from Sort class
-			Sort* Puzzle = new Sort(input3, input4);
+			Sort* Puzzle;
+			if (input2 == 5 || input2 == 7)
+				Puzzle = new Sort(input3, input4, false);		// For A* with Manhanttan Distance
+			else
+				Puzzle = new Sort(input3, input4, true);		// For A* with Out-Of-Place
 			Node* fin = new Node();
 
 			// Start of stopwatch
 			auto start = std::chrono::high_resolution_clock::now();
 
-			// Perform one of the five sorting algorithms
+			// Perform one of the seven sorting algorithms
 			if (input2 == 1) {
 				fin = Puzzle->BFS();
 			}
@@ -212,17 +230,25 @@ int main() {
 				fin = Puzzle->IterativeDeepingSearch();
 			}
 			else if (input2 == 4) {
-				std::cout << "Heuristics Cost: " << startState->getHeur() << std::endl << std::endl;
+				std::cout << "Heuristics Cost: " << startState->getHeur(true) << std::endl << std::endl;
 				fin = Puzzle->AstarSearch();
 			}
 			else if (input2 == 5) {
-				std::cout << "Heuristics Cost: " << startState->getHeur() << std::endl << std::endl;
+				std::cout << "Heuristics Cost: " << startState->getHeur(false) << std::endl << std::endl;
+				fin = Puzzle->AstarSearch();
+			}
+			else if (input2 == 6) {
+				std::cout << "Heuristics Cost: " << startState->getHeur(true) << std::endl << std::endl;
+				fin = Puzzle->IDASearch();
+			}
+			else if (input2 == 7) {
+				std::cout << "Heuristics Cost: " << startState->getHeur(false) << std::endl << std::endl;
 				fin = Puzzle->IDASearch();
 			}
 
 			// End of stopwatch
 			auto end = std::chrono::high_resolution_clock::now();
-			double time_taken = std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
+			double time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
 			if ((*fin->state) == std::string(""))			// Case if algorithm could not reach goal state
 				std::cout << "Final state could not be found. Please relaunch program and try again." << std::endl;
@@ -233,13 +259,13 @@ int main() {
 				std::string m = (*fin->moves);
 
 				// Print final details of sorting algorithm
-				std::cout << std::endl << "Final state:" << std::endl;
+				std::cout << "Final state:" << std::endl;
 				fin->display();
 				std::cout << "Number of expanded node: " << ex << std::endl;
 				std::cout << "Solution sequence of moves: " << m << std::endl;
 				if (input2 == 3)
 					std::cout << "Depth Reached: " << m.size() << std::endl;
-				std::cout << "Time take: " << time_taken << " seconds" << std::endl;
+				std::cout << "Time take: " << time_taken << " milliseconds" << std::endl;
 			}
 		}
 	}

@@ -7,6 +7,19 @@ using namespace std;
 // Default constructor
 PQueue::PQueue() {
 	numElems = 0;
+	type = false;
+}
+
+// Default constructor with bool constructor
+PQueue::PQueue(bool t) {
+	numElems = 0;
+	type = t;
+}
+
+// function to clear priority queue
+void PQueue::PQclear() {
+	Pqueue.clear();
+	numElems = 0;
 }
 
 // Boolean function to check if PQ is empty
@@ -34,7 +47,6 @@ int PQueue::getRightChild(int parent) {
 
 // Function to push element onto PQ
 void PQueue::push(Node* item) {
-		int i = numElems;
 		Pqueue.push_back(item);
 		numElems++;
 		minHeapify(0, numElems);
@@ -62,9 +74,9 @@ void PQueue::minHeapify(int i, int size) {
 	int right = 2 * i + 2;		// right child of a[i]
 	int smallest = i;			// original smallest element
 
-	if ((left < size) && (Pqueue.at(left)->getHeur() < Pqueue.at(i)->getHeur()))
+	if ((left < size) && (Pqueue.at(left)->getHeur(type) < Pqueue.at(i)->getHeur(type)))
 		smallest = left;
-	if ((right < size) && (Pqueue.at(right)->getHeur() < Pqueue.at(smallest)->getHeur()))
+	if ((right < size) && (Pqueue.at(right)->getHeur(type) < Pqueue.at(smallest)->getHeur(type)))
 		smallest = right;
 	if (smallest != i) {		// smallest element was swapped
 		swap(Pqueue.at(i), Pqueue.at(smallest));
